@@ -1,13 +1,15 @@
 "use client";
 
 import { useState } from "react";
-import { useForm } from "react-hook-form";
+import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useRouter } from "next/navigation";
 import { Field } from "@/components/Field";
+import { StateSelect } from "@/components/StateSelect";
 import { submitApplication } from "@/lib/api";
 import { ApplicationDto } from "@/lib/types";
+import { STATE_CODES } from "@/lib/states";
 
 const schema = z.object({
   firstName: z.string().min(1, "First name is required"),
@@ -15,8 +17,7 @@ const schema = z.object({
   address: z.string().min(1, "Address is required"),
   state: z
     .string()
-    .min(1, "State is required")
-    .max(2, "Use 2-letter state code"),
+    .refine((v) => STATE_CODES.includes(v.toUpperCase()), "Select a valid US state"),
   companyName: z.string().min(1, "Company name is required"),
   requestedAmount: z
     .number()
@@ -36,6 +37,7 @@ export function ApplicationForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors },
   } = useForm<FormValues>({
     resolver: zodResolver(schema),
@@ -95,13 +97,17 @@ export function ApplicationForm() {
       />
 
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-        <Field
-          label="State"
-          placeholder="CA"
-          maxLength={2}
-          error={errors.state?.message}
-          {...register("state")}
-          className="uppercase"
+        <Controller
+          name="state"
+          control={control}
+          render={({ field }) => (
+            <StateSelect
+              label="State"
+              error={errors.state?.message}
+              value={field.value}
+              onChange={field.onChange}
+            />
+          )}
         />
         <Field
           label="Company name"
